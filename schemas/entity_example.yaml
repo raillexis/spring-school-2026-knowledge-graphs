@@ -1,0 +1,3 @@
+entities:
+  - name: EntityName
+    type: ENTITY_TYPE

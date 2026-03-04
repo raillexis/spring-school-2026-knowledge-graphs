@@ -1,0 +1,31 @@
+# YAML 1.2
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+---
+cff-version: 1.2.0
+title: "Spring School “Teaching for Change”: Workshop on Knowledge Graphs"
+message: 'If you use this software, please cite it using these metadata.'
+type: software
+authors:
+  - given-names: Martin
+    family-names: Scheidt
+    orcid: 'https://orcid.org/0000-0002-9384-8945'
+  - given-names: Julia
+    family-names: Edelava
+    orcid: 'https://orcid.org/0000-0003-0053-0151'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.18864680
+    description: 'Workshop on Knowledge Graphs'
+url: 'https://github.com/kaat0/spring-school-2026-knowledge-graphs'
+repository: 'https://github.com/kaat0/spring-school-2026-knowledge-graphs'
+abstract: >-
+  This workshop introduces the concept of knowledge graphs and how to build them using LLMs and Julia.
+keywords:
+  - knowledge graphs
+  - LLMs
+  - Julia
+  - teaching
+license: ISC
+version: 1.0.0
+date-released: 2026-03-04
