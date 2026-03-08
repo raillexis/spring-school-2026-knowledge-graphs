@@ -8,6 +8,8 @@ else
     include("Prompting.jl")
     using .Prompting: prompt
 end
+include("PromptLogging.jl")
+using .PromptLogging: LOG_DIR, logging
 using Main.Utils: ENTITY_JSON_EXAMPLE, RELATIONSHIP_JSON_EXAMPLE, validate_entities, validate_relationships
 
 # ---- Constants ----
@@ -64,11 +66,21 @@ end
     _parse_json_from_response(response_str) -> Union{Dict, Nothing}
 
 Extract the first `{...}` JSON blob from `response_str` and parse it.
-Returns `nothing` if no valid JSON block is found.
+Returns the parsed `Dict` or `nothing` if no valid JSON block is found
+or parsing fails.
 """
 function _parse_json_from_response(response_str::String)
     m = match(r"\{.*\}"s, response_str)
-    m === nothing ? nothing : JSON.parse(m.match)
+    if m === nothing
+        @warn "No JSON found in LLM response"
+        return nothing
+    end
+    try
+        return JSON.parse(String(m.match))
+    catch e
+        @warn "JSON parsing failed" exception = e
+        return nothing
+    end
 end
 
 # ---- Public API ----
@@ -113,6 +125,7 @@ function extract_entities(
 
     @debug "Model response: \n $raw_response"
     
+    logging("entities", full_prompt, raw_response)
     parsed = _parse_json_from_response(raw_response)
 
     @debug "Parsed JSON: \n $parsed"
@@ -177,6 +190,7 @@ function extract_relationships(
 
     @debug "Model response: \n $raw_response"
     
+    logging("relationships", full_prompt, raw_response)
     parsed = _parse_json_from_response(raw_response)
 
     @debug "Parsed JSON: \n $parsed"

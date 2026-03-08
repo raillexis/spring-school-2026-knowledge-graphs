@@ -3,7 +3,7 @@ module Prompting
 using HTTP
 using JSON
 
-export prompt, set_backend!
+export prompt, set_backend!, LAST_RESPONSE_INFO
 
 # ---- Helpers ----
 function get_api_key(env_keys::Tuple, override::Union{AbstractString,Nothing})
@@ -38,6 +38,25 @@ function post_json(url, body; headers = ["Content-Type" => "application/json"])
     JSON.parse(String(response.body))
 end
 
+const LAST_RESPONSE_INFO = Ref("")
+
+function _log_response_info(data::AbstractDict)
+    backend = CONFIG[].backend
+    model   = get(data, "model", "unknown")
+    status  = get(data, "object", "unknown")
+    usage   = get(data, "usage", nothing)
+    if usage !== nothing
+        prompt_tok     = get(usage, "prompt_tokens", "-")
+        completion_tok = get(usage, "completion_tokens", "-")
+        total_tok      = get(usage, "total_tokens", "-")
+        @info "LLM response" backend model status prompt_tokens=prompt_tok completion_tokens=completion_tok total_tokens=total_tok
+        LAST_RESPONSE_INFO[] = "backend=$backend  model=$model  status=$status  prompt_tokens=$prompt_tok  completion_tokens=$completion_tok  total_tokens=$total_tok"
+    else
+        @info "LLM response" backend model status usage="not reported"
+        LAST_RESPONSE_INFO[] = "backend=$backend  model=$model  status=$status  usage=not reported"
+    end
+end
+
 # ---- Backend implementations ----
 function _ask_local(prompt; model, api_key, temperature, max_tokens, base_url = "http://localhost:4891", path = "/v1/chat/completions")
     url = rstrip(base_url, '/') * path
@@ -48,6 +67,7 @@ function _ask_local(prompt; model, api_key, temperature, max_tokens, base_url = 
         "max_tokens" => max_tokens,
     )
     data = post_json(url, body)
+    _log_response_info(data)
     data["choices"][1]["message"]["content"]
 end
 
@@ -67,6 +87,7 @@ function _ask_openrouter(prompt; model, api_key, temperature, max_tokens, kwargs
         msg = haskey(err, "message") ? err["message"] : string(err)
         throw(ErrorException("OpenRouter API error: $msg"))
     end
+    _log_response_info(data)
     data["choices"][1]["message"]["content"]
 end
 
