@@ -2,8 +2,29 @@ module KnowledgeGraphs
 
 using Graphs, MetaGraphs, GraphIO
 using GraphMakie, GraphMakie.NetworkLayout, CairoMakie
+using JSON, JSONSchema, YAML
 
 export build_knowledge_graph, plot_knowledge_graph, save_knowledge_graph_png, save_knowledge_graph_gml
+
+# -----------------------------------------------------------------------------
+# Schema constants and validation
+# -----------------------------------------------------------------------------
+
+const SCHEMAS_DIR = joinpath(@__DIR__, "schemas")
+
+# JSON Schema definitions (draft-07) for entity and relationship extraction; loaded from workshop/schemas/
+const ENTITY_JSON_SCHEMA = read(joinpath(SCHEMAS_DIR, "entity.json"), String)
+const RELATIONSHIP_JSON_SCHEMA = read(joinpath(SCHEMAS_DIR, "relationship.json"), String)
+
+# Sample payloads for prompts; loaded from YAML in workshop/schemas/ and exposed as JSON strings
+const ENTITY_JSON_EXAMPLE = JSON.json(YAML.load(read(joinpath(SCHEMAS_DIR, "entity_example.yaml"), String)))
+const RELATIONSHIP_JSON_EXAMPLE = JSON.json(YAML.load(read(joinpath(SCHEMAS_DIR, "relationship_example.yaml"), String)))
+
+"""Return true if `data` (Dict) conforms to the entity extraction schema."""
+validate_entities(data) = JSONSchema.validate(JSONSchema.Schema(ENTITY_JSON_SCHEMA), data) === nothing
+
+"""Return true if `data` (Dict) conforms to the relationship extraction schema."""
+validate_relationships(data) = JSONSchema.validate(JSONSchema.Schema(RELATIONSHIP_JSON_SCHEMA), data) === nothing
 
 # -----------------------------------------------------------------------------
 # Plot defaults

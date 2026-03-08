@@ -10,7 +10,7 @@ else
 end
 include("PromptLogging.jl")
 using .PromptLogging: LOG_DIR, logging
-using Main.Utils: ENTITY_JSON_EXAMPLE, RELATIONSHIP_JSON_EXAMPLE, validate_entities, validate_relationships
+using Main.KnowledgeGraphs: ENTITY_JSON_EXAMPLE, RELATIONSHIP_JSON_EXAMPLE, validate_entities, validate_relationships
 
 # ---- Constants ----
 const ENTITY_TYPES = [
