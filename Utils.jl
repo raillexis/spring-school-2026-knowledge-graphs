@@ -2,6 +2,7 @@ module Utils
 
 using JSON, JSONSchema
 using YAML
+using PDFIO
 
 const SCHEMAS_DIR = joinpath(@__DIR__, "schemas")
 
@@ -40,6 +41,24 @@ end
 
 function read_text(filename)
     read(filename, String)
+end
+
+"""
+    get_pdf_text(src) -> String
+
+- src - Input PDF file path from where text is to be extracted
+- return - Extracted text from all pages (in memory, no file written)
+"""
+function get_pdf_text(src)
+    doc = pdDocOpen(src)
+    io = IOBuffer()
+    npage = pdDocGetPageCount(doc)
+    for i = 1:npage
+        page = pdDocGetPage(doc, i)
+        pdPageExtractText(io, page)
+    end
+    pdDocClose(doc)
+    return String(take!(io))
 end
 
 end # module Utils

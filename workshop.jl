@@ -34,7 +34,7 @@ Pkg.activate(@__DIR__)
 Pkg.instantiate()
 
 include("Utils.jl")
-using .Utils: save_yaml, read_text
+using .Utils: save_yaml, read_text, get_pdf_text
 include("Prompting.jl")
 using .Prompting: prompt, set_backend!
 include("TextMining.jl")
@@ -75,6 +75,7 @@ DB is responsible for maintaining the track.
 """
 # or load from a file:
 #example_text = read_text("examples/simple.txt")
+#example_text = get_pdf_text("examples/simple.pdf")
 
 # ---- Step 3: Extract entities -------------------------------------------------
 # "Entities" are the key concepts in the text (things, people, organisations…).
