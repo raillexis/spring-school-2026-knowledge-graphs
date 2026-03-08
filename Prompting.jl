@@ -3,7 +3,7 @@ module Prompting
 using HTTP
 using JSON
 
-export prompt, set_backend!, LAST_RESPONSE_INFO
+export prompt, set_backend!, LAST_RESPONSE_INFO, LAST_FINISH_REASON
 
 # ---- Helpers ----
 function get_api_key(env_keys::Tuple, override::Union{AbstractString,Nothing})
@@ -39,33 +39,49 @@ function post_json(url, body; headers = ["Content-Type" => "application/json"])
 end
 
 const LAST_RESPONSE_INFO = Ref("")
+const LAST_FINISH_REASON = Ref("")
+
+function _extract_finish_reason(data::AbstractDict)
+    choices = get(data, "choices", nothing)
+    (choices === nothing || isempty(choices)) && return "unknown"
+    string(get(first(choices), "finish_reason", "unknown"))
+end
 
 function _log_response_info(data::AbstractDict)
     backend = CONFIG[].backend
     model   = get(data, "model", "unknown")
     status  = get(data, "object", "unknown")
+    finish  = _extract_finish_reason(data)
+    LAST_FINISH_REASON[] = finish
     usage   = get(data, "usage", nothing)
     if usage !== nothing
         prompt_tok     = get(usage, "prompt_tokens", "-")
         completion_tok = get(usage, "completion_tokens", "-")
         total_tok      = get(usage, "total_tokens", "-")
-        @info "LLM response" backend model status prompt_tokens=prompt_tok completion_tokens=completion_tok total_tokens=total_tok
-        LAST_RESPONSE_INFO[] = "backend=$backend  model=$model  status=$status  prompt_tokens=$prompt_tok  completion_tokens=$completion_tok  total_tokens=$total_tok"
+        @info "LLM response" backend model status finish_reason=finish prompt_tokens=prompt_tok completion_tokens=completion_tok total_tokens=total_tok
+        LAST_RESPONSE_INFO[] = "backend=$backend  model=$model  status=$status  finish_reason=$finish  prompt_tokens=$prompt_tok  completion_tokens=$completion_tok  total_tokens=$total_tok"
     else
-        @info "LLM response" backend model status usage="not reported"
-        LAST_RESPONSE_INFO[] = "backend=$backend  model=$model  status=$status  usage=not reported"
+        @info "LLM response" backend model status finish_reason=finish usage="not reported"
+        LAST_RESPONSE_INFO[] = "backend=$backend  model=$model  status=$status  finish_reason=$finish  usage=not reported"
+    end
+    if finish == "length"
+        @warn "Response was TRUNCATED (finish_reason=length). Output may be incomplete — attempting JSON repair."
     end
 end
 
 # ---- Backend implementations ----
-function _ask_local(prompt; model, api_key, temperature, max_tokens, base_url = "http://localhost:4891", path = "/v1/chat/completions")
-    url = rstrip(base_url, '/') * path
-    body = Dict(
+function _build_chat_body(; model, temperature, max_tokens, prompt_text)
+    Dict(
         "model" => model,
-        "messages" => [Dict("role" => "user", "content" => prompt)],
+        "messages" => [Dict("role" => "user", "content" => prompt_text)],
         "temperature" => temperature,
         "max_tokens" => max_tokens,
     )
+end
+
+function _ask_local(prompt; model, api_key, temperature, max_tokens, base_url = "http://localhost:4891", path = "/v1/chat/completions")
+    url = rstrip(base_url, '/') * path
+    body = _build_chat_body(; model, temperature, max_tokens, prompt_text = prompt)
     data = post_json(url, body)
     _log_response_info(data)
     data["choices"][1]["message"]["content"]
@@ -74,12 +90,7 @@ end
 function _ask_openrouter(prompt; model, api_key, temperature, max_tokens, kwargs...)
     key = get_api_key(("OPENROUTER_API_KEY",), api_key)
     isempty(key) && error("OpenRouter API key required: set OPENROUTER_API_KEY")
-    body = Dict(
-        "model" => model,
-        "messages" => [Dict("role" => "user", "content" => prompt)],
-        "temperature" => temperature,
-        "max_tokens" => max_tokens,
-    )
+    body = _build_chat_body(; model, temperature, max_tokens, prompt_text = prompt)
     headers = ["Content-Type" => "application/json", "Authorization" => "Bearer $key"]
     data = post_json("https://openrouter.ai/api/v1/chat/completions", body; headers)
     if haskey(data, "error")
@@ -112,7 +123,7 @@ const CONFIG = Ref(PromptConfig(
     "Llama 3 8B Instruct", # model name
     nothing, # api key
     0.3, # temperature - i.e. remove randomness from the output
-    4096, # max tokens - i.e. the maximum number of tokens in the output
+    16384, # max output tokens — generous default to avoid truncation
     "http://localhost:4891", # base url
     "/v1/chat/completions", # path
 ))
@@ -124,7 +135,7 @@ Set backend and optional parameters for all subsequent `prompt(...)` calls.
 - `backend`: `:local` (LM Studio, Ollama, gpt4all etc.) or `:openrouter`
 - `model`: model name (defaults per backend if not set)
 - `api_key`: API key (for OpenRouter; or set env OPENROUTER_API_KEY)
-- `temperature`, `max_tokens`: sampling parameters
+- `temperature`, `max_tokens`: sampling parameters (default: 16384)
 - `base_url`, `path`: for `:local` only (e.g. "http://localhost:4891", "/v1/chat/completions")
 
 Omitted keyword arguments keep their current value (or backend default when switching backend).

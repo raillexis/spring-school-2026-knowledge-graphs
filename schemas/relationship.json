@@ -7,7 +7,7 @@
             "type": "array",
             "items": {
                 "type": "object",
-                "required": ["source", "target", "type", "confidence"],
+                "required": ["source", "target", "type"],
                 "properties": {
                     "id": {"type": "string"},
                     "source": {"type": "string"},

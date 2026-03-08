@@ -51,7 +51,7 @@ using .KnowledgeGraphs: build_knowledge_graph, plot_knowledge_graph, save_knowle
 #   • To disable it:     put a "#" back at the start of the line.
 
 # Option A — Local model (LM Studio, Ollama, GPT4All, etc. on port 4891):
-set_backend!(:local, base_url = "http://localhost:4891", path = "/v1/chat/completions")
+set_backend!(:local, base_url = "http://localhost:4891", path = "/v1/chat/completions", max_tokens = 4096)
 
 # Option B — Cloud model via OpenRouter (needs an API key):
 # set_backend!(:openrouter, model = "openrouter/auto", api_key = "your-key-here")

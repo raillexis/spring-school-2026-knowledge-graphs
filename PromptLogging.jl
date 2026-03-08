@@ -1,7 +1,7 @@
 module PromptLogging
 
 using Dates
-using Main.Prompting: LAST_RESPONSE_INFO
+using Main.Prompting: LAST_RESPONSE_INFO, LAST_FINISH_REASON
 
 export LOG_DIR, logging
 
@@ -40,6 +40,9 @@ function logging(label::AbstractString, prompt_text::AbstractString, raw_respons
     open(path, "w") do io
         _section(io, ts.display, "")
         _section(io, "LLM response info", LAST_RESPONSE_INFO[])
+        if LAST_FINISH_REASON[] == "length"
+            _section(io, "WARNING", "Response was TRUNCATED (finish_reason=length). Output may be incomplete.")
+        end
         _section(io, "prompt", prompt_text)
         _section(io, "raw LLM response", raw_response)
     end

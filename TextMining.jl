@@ -63,24 +63,53 @@ function _deduplicate_by(v::Vector, key_fn)
 end
 
 """
+    _repair_truncated_json(text) -> Union{String, Nothing}
+
+Attempt to repair truncated JSON by trimming back to the last `,`,
+removing it, and closing with `]}`.
+"""
+function _repair_truncated_json(text::AbstractString)
+    idx = findfirst('{', text)
+    idx === nothing && return nothing
+    s = text[idx:end]
+
+    # Cut back to the last comma (end of the last complete array entry)
+    i = findlast(',', s)
+    i === nothing && return nothing
+    s = s[1:prevind(s, i)]
+
+    s * "]}"
+end
+
+"""
     _parse_json_from_response(response_str) -> Union{Dict, Nothing}
 
 Extract the first `{...}` JSON blob from `response_str` and parse it.
-Returns the parsed `Dict` or `nothing` if no valid JSON block is found
-or parsing fails.
+If normal parsing fails (e.g. truncated output), attempts bracket repair.
+Returns the parsed `Dict` or `nothing` if no valid JSON block is found.
 """
 function _parse_json_from_response(response_str::String)
     m = match(r"\{.*\}"s, response_str)
-    if m === nothing
-        @warn "No JSON found in LLM response"
-        return nothing
+    if m !== nothing
+        try
+            return JSON.parse(String(m.match))
+        catch
+        end
     end
-    try
-        return JSON.parse(String(m.match))
-    catch e
-        @warn "JSON parsing failed" exception = e
-        return nothing
+
+    repaired = _repair_truncated_json(response_str)
+    if repaired !== nothing
+        try
+            parsed = JSON.parse(repaired)
+            @warn "JSON was truncated — repaired by closing missing brackets. Some trailing entries may be lost."
+            return parsed
+        catch e
+            @warn "JSON repair also failed" exception = e
+        end
     end
+
+    @warn "No valid JSON found in LLM response"
+    return nothing
 end
 
 # ---- Public API ----
