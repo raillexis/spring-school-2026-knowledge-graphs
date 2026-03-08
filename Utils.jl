@@ -31,15 +31,21 @@ function save_yaml(data, filename)
     YAML.write_file(filename, data)
 end
 
-function read_json(filename)
+function save_text(text, filename)
+    open(filename, "w") do f
+        write(f, text)
+    end
+end
+
+function load_json(filename)
     JSON.parse(read(filename, String))
 end
 
-function read_yaml(filename)
+function load_yaml(filename)
     YAML.load(read(filename, String))
 end
 
-function read_text(filename)
+function load_text(filename)
     read(filename, String)
 end
 

@@ -34,7 +34,7 @@ Pkg.activate(@__DIR__)
 Pkg.instantiate()
 
 include("Utils.jl")
-using .Utils: save_yaml, read_text, get_pdf_text, collect_entity_types
+using .Utils: save_yaml, load_text, get_pdf_text, collect_types
 include("Prompting.jl")
 using .Prompting: prompt, set_backend!
 include("TextMining.jl")
@@ -74,7 +74,7 @@ The rail has a crack. The train runs on the track. Track has two rails.
 DB is responsible for maintaining the track.
 """
 # or load from a file:
-#example_text = read_text("examples/simple.txt")
+#example_text = load_text("examples/simple.txt")
 #example_text = get_pdf_text("examples/simple.pdf")
 
 # ---- Step 3: Extract entities -------------------------------------------------
@@ -95,7 +95,7 @@ println("Extracted ", length(entities), " entities.")
 # Optionally save the result to a YAML file so you can inspect or reuse it:
 #save_yaml(entities, "entities.yaml")
 # Optionally show the entity types if you used an empty list:
-#println("Entity types: ", collect_entity_types(entities))
+#println("Entity types: ", collect_types(entities))
 
 # ---- Step 4: Extract relationships --------------------------------------------
 # "Relationships" describe how entities are connected (e.g. a train OPERATES_ON
@@ -145,10 +145,10 @@ plot_knowledge_graph(graph)
 #     your LLM backend is still responding (re-run the quick test in Step 1).
 #   • Graph looks messy?  Start with a shorter excerpt (2–3 paragraphs) and
 #     refine entity/relationship types to reduce noise.
-#   • Working with PDFs?  Use read_pdf("file.pdf") instead of read_text.
+#   • Working with PDFs?  Use get_pdf_text("file.pdf") instead of load_text.
 # -----------------------------------------------------------------------------
 
-# my_text = read_text("your_file.txt")
+# my_text = load_text("your_file.txt")
 # my_entity_types = ["Person", "Organization", "Concept", "Event", "Other"]
 # my_entities = extract_entities(my_text; types = my_entity_types)
 # my_relationships = extract_relationships(my_text, my_entities)
