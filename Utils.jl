@@ -62,13 +62,13 @@ function get_pdf_text(src)
 end
 
 """
-    collect_entity_types(entities) -> Vector{String}
+    collect_types(entities; type_key = "type") -> Vector{String}
 
 Return a sorted vector of unique entity type labels found in `entities`
-(a vector of dicts each containing a `"type"` key).
+(a vector of dicts each containing a `type_key` key).
 """
-function collect_entity_types(entities)
-    sort!(collect(Set(e["type"] for e in entities)))
+function collect_types(entities; type_key = "type")
+    sort!(collect(Set(e[type_key] for e in entities)))
 end
 
 end # module Utils
