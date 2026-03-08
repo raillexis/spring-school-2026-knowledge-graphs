@@ -34,7 +34,7 @@ Pkg.activate(@__DIR__)
 Pkg.instantiate()
 
 include("Utils.jl")
-using .Utils: save_yaml, read_text, get_pdf_text
+using .Utils: save_yaml, read_text, get_pdf_text, collect_entity_types
 include("Prompting.jl")
 using .Prompting: prompt, set_backend!
 include("TextMining.jl")
@@ -94,6 +94,8 @@ println("Extracted ", length(entities), " entities.")
 
 # Optionally save the result to a YAML file so you can inspect or reuse it:
 #save_yaml(entities, "entities.yaml")
+# Optionally show the entity types if you used an empty list:
+#println("Entity types: ", collect_entity_types(entities))
 
 # ---- Step 4: Extract relationships --------------------------------------------
 # "Relationships" describe how entities are connected (e.g. a train OPERATES_ON

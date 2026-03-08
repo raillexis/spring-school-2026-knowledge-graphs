@@ -61,4 +61,14 @@ function get_pdf_text(src)
     return String(take!(io))
 end
 
+"""
+    collect_entity_types(entities) -> Vector{String}
+
+Return a sorted vector of unique entity type labels found in `entities`
+(a vector of dicts each containing a `"type"` key).
+"""
+function collect_entity_types(entities)
+    sort!(collect(Set(e["type"] for e in entities)))
+end
+
 end # module Utils
