@@ -72,8 +72,8 @@ const CONFIG = Ref(PromptConfig(
     :local, # model backend
     "Llama 3 8B Instruct", # model name
     nothing, # api key
-    0.3, # temperature
-    4096, # max tokens
+    0.3, # temperature - i.e. remove randomness from the output
+    4096, # max tokens - i.e. the maximum number of tokens in the output
     "http://localhost:4891", # base url
     "/v1/chat/completions", # path
 ))
