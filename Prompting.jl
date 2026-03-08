@@ -16,7 +16,25 @@ function get_api_key(env_keys::Tuple, override::Union{AbstractString,Nothing})
 end
 
 function post_json(url, body; headers = ["Content-Type" => "application/json"])
-    response = HTTP.post(url, headers, JSON.json(body))
+    local response
+    try
+        response = HTTP.post(url, headers, JSON.json(body))
+    catch e
+        if e isa HTTP.Exceptions.StatusError && e.status == 500
+            msg = try String(e.response.body) catch; "" end
+            if contains(msg, "too long")
+                throw(ErrorException(
+                    "Prompt too long for the model's context window. " *
+                    "Increase the Context Length in your GPT4All / LLM server settings, " *
+                    "or shorten the input. (Server returned: $(msg))"))
+            end
+            throw(ErrorException(
+                "LLM server returned HTTP 500. This often means the prompt exceeds " *
+                "the model's context length. Check your server settings. " *
+                "(Server body: $(msg))"))
+        end
+        rethrow()
+    end
     JSON.parse(String(response.body))
 end
 
