@@ -130,7 +130,7 @@ function extract_entities(
 
     instruction = """
         Extract all important entities from the text below.
-        Each entity must have a short canonical name, and a type chosen from:
+        Each entity must have a short canonical name, and one or more types chosen from:
         $types_str.
 
         Rules:
@@ -186,7 +186,7 @@ function extract_relationships(
     rules::Vector{String} = RELATIONSHIP_RULES,
     min_confidence::Float64 = 0.0,
 )
-    entity_descriptions = join(("- $(e["name"]) ($(e["type"]))" for e in entities), "\n        ")
+    entity_descriptions = join(("- $(e["name"]) ($(e["type"] isa AbstractVector ? join(e["type"], ", ") : e["type"]))" for e in entities), "\n        ")
     rules_str = _format_rules(rules)
     relationship_types_str = join(RELATIONSHIP_TYPES, ", ")
 

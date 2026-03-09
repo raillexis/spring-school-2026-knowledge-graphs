@@ -1,0 +1,14 @@
+entities:
+  - name: EntityName
+    type:
+      - ENTITY_TYPE_1
+      - ENTITY_TYPE_2 (optional)
+      - ENTITY_TYPE_3 (optional)
+      - ...
+    id: e1 (optional)
+relationships:
+  - source: EntityName
+    target: EntityName
+    type: RELATIONSHIP_TYPE
+    confidence: 0.9
+    id: r1 (optional)

@@ -1,5 +1,0 @@
-relationships:
-  - source: EntityName
-    target: EntityName
-    type: RELATIONSHIP_TYPE
-    confidence: 0.9

@@ -57,7 +57,16 @@ Return a sorted vector of unique entity type labels found in `entities`
 (a vector of dicts each containing a `type_key` key).
 """
 function collect_types(entities; type_key = "type")
-    sort!(collect(Set(e[type_key] for e in entities)))
+    all_types = Set{String}()
+    for e in entities
+        v = e[type_key]
+        if v isa AbstractVector
+            union!(all_types, v)
+        else
+            push!(all_types, v)
+        end
+    end
+    sort!(collect(all_types))
 end
 
 end # module Utils

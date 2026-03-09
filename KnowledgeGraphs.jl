@@ -4,7 +4,7 @@ using Graphs, MetaGraphs, GraphIO
 using GraphMakie, GraphMakie.NetworkLayout, CairoMakie
 using JSON, JSONSchema, YAML
 
-export build_knowledge_graph, plot_knowledge_graph, save_knowledge_graph_png, save_knowledge_graph_gml
+export build_knowledge_graph, plot_knowledge_graph, save_knowledge_graph_png, save_knowledge_graph_gml, validate_graph
 
 # -----------------------------------------------------------------------------
 # Schema constants and validation
@@ -12,19 +12,22 @@ export build_knowledge_graph, plot_knowledge_graph, save_knowledge_graph_png, sa
 
 const SCHEMAS_DIR = joinpath(@__DIR__, "schemas")
 
-# JSON Schema definitions (draft-07) for entity and relationship extraction; loaded from workshop/schemas/
-const ENTITY_JSON_SCHEMA = read(joinpath(SCHEMAS_DIR, "entity.json"), String)
-const RELATIONSHIP_JSON_SCHEMA = read(joinpath(SCHEMAS_DIR, "relationship.json"), String)
+# Unified knowledge-graph JSON Schema (draft-07): vertices = entities, edges = relationships
+const SCHEMA = JSONSchema.Schema(read(joinpath(SCHEMAS_DIR, "knowledge-graph.json"), String))
 
-# Sample payloads for prompts; loaded from YAML in workshop/schemas/ and exposed as JSON strings
-const ENTITY_JSON_EXAMPLE = JSON.json(YAML.load(read(joinpath(SCHEMAS_DIR, "entity_example.yaml"), String)))
-const RELATIONSHIP_JSON_EXAMPLE = JSON.json(YAML.load(read(joinpath(SCHEMAS_DIR, "relationship_example.yaml"), String)))
+# Sample payloads for prompts; sub-examples exposed for the two-phase extraction in TextMining
+const _KG_EXAMPLE = YAML.load(read(joinpath(SCHEMAS_DIR, "knowledge-graph_example.yaml"), String))
+const ENTITY_JSON_EXAMPLE = JSON.json(Dict("entities" => _KG_EXAMPLE["entities"]))
+const RELATIONSHIP_JSON_EXAMPLE = JSON.json(Dict("relationships" => _KG_EXAMPLE["relationships"]))
 
-"""Return true if `data` (Dict) conforms to the entity extraction schema."""
-validate_entities(data) = JSONSchema.validate(JSONSchema.Schema(ENTITY_JSON_SCHEMA), data) === nothing
+"""Return true if `data` (Dict) conforms to the entity (vertex) part of the graph schema."""
+validate_entities(data) = haskey(data, "entities") && JSONSchema.validate(SCHEMA, data) === nothing
 
-"""Return true if `data` (Dict) conforms to the relationship extraction schema."""
-validate_relationships(data) = JSONSchema.validate(JSONSchema.Schema(RELATIONSHIP_JSON_SCHEMA), data) === nothing
+"""Return true if `data` (Dict) conforms to the relationship (edge) part of the graph schema."""
+validate_relationships(data) = haskey(data, "relationships") && JSONSchema.validate(SCHEMA, data) === nothing
+
+"""Return true if `data` (Dict) conforms to the full graph schema (both entities and relationships)."""
+validate_graph(data) = haskey(data, "entities") && haskey(data, "relationships") && JSONSchema.validate(SCHEMA, data) === nothing
 
 # -----------------------------------------------------------------------------
 # Plot defaults
@@ -55,7 +58,8 @@ function _set_vertex_props!(g, all_names, entity_by_name)
         set_prop!(g, i, :name, name)
         if haskey(entity_by_name, name)
             e = entity_by_name[name]
-            set_prop!(g, i, :type, e["type"])
+            types = e["type"]
+            set_prop!(g, i, :type, types isa AbstractVector ? join(types, ", ") : types)
             haskey(e, "id") && set_prop!(g, i, :id, e["id"])
         else
             set_prop!(g, i, :type, "Other")
