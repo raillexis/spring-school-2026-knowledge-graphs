@@ -37,10 +37,10 @@ include("Utils.jl")
 using .Utils: save_yaml, load_text, get_pdf_text, collect_types
 include("Prompting.jl")
 using .Prompting: prompt, set_backend!
-include("TextMining.jl")
-using .TextMining: extract_entities, extract_relationships
 include("KnowledgeGraphs.jl")
 using .KnowledgeGraphs: build_knowledge_graph, plot_knowledge_graph, save_knowledge_graph_png
+include("TextMining.jl")
+using .TextMining: extract_entities, extract_relationships
 
 # -----------------------------------------------------------------------------
 # STEP 1: Connect to the LLM (Large Language Model)

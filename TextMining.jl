@@ -1,6 +1,7 @@
 module TextMining
 
 using JSON
+
 # Use Prompting from Main if already loaded (e.g. by workshop.jl with chosen backend); otherwise load it
 if isdefined(Main, :Prompting)
     using Main.Prompting: prompt
@@ -8,9 +9,16 @@ else
     include("Prompting.jl")
     using .Prompting: prompt
 end
+
 include("PromptLogging.jl")
 using .PromptLogging: LOG_DIR, logging
-using Main.KnowledgeGraphs: ENTITY_JSON_EXAMPLE, RELATIONSHIP_JSON_EXAMPLE, validate_entities, validate_relationships
+
+if isdefined(Main, :KnowledgeGraphs)
+    using Main.KnowledgeGraphs: ENTITY_JSON_EXAMPLE, RELATIONSHIP_JSON_EXAMPLE, validate_entities, validate_relationships
+else
+    include("KnowledgeGraphs.jl")
+    using .KnowledgeGraphs: ENTITY_JSON_EXAMPLE, RELATIONSHIP_JSON_EXAMPLE, validate_entities, validate_relationships
+end
 
 # ---- Constants ----
 const ENTITY_TYPES = [
