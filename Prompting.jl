@@ -70,27 +70,27 @@ function _log_response_info(data::AbstractDict)
 end
 
 # ---- Backend implementations ----
-function _build_chat_body(; model, temperature, max_tokens, prompt_text)
+function _build_chat_body(; model, temperature, max_output_tokens, prompt_text)
     Dict(
         "model" => model,
         "messages" => [Dict("role" => "user", "content" => prompt_text)],
         "temperature" => temperature,
-        "max_tokens" => max_tokens,
+        "max_tokens" => max_output_tokens,
     )
 end
 
-function _ask_local(prompt; model, api_key, temperature, max_tokens, base_url = "http://localhost:4891", path = "/v1/chat/completions")
+function _ask_local(prompt; model, api_key, temperature, max_output_tokens, base_url = "http://localhost:4891", path = "/v1/chat/completions")
     url = rstrip(base_url, '/') * path
-    body = _build_chat_body(; model, temperature, max_tokens, prompt_text = prompt)
+    body = _build_chat_body(; model, temperature, max_output_tokens, prompt_text = prompt)
     data = post_json(url, body)
     _log_response_info(data)
     data["choices"][1]["message"]["content"]
 end
 
-function _ask_openrouter(prompt; model, api_key, temperature, max_tokens, kwargs...)
+function _ask_openrouter(prompt; model, api_key, temperature, max_output_tokens, kwargs...)
     key = get_api_key(("OPENROUTER_API_KEY",), api_key)
     isempty(key) && error("OpenRouter API key required: set OPENROUTER_API_KEY")
-    body = _build_chat_body(; model, temperature, max_tokens, prompt_text = prompt)
+    body = _build_chat_body(; model, temperature, max_output_tokens, prompt_text = prompt)
     headers = ["Content-Type" => "application/json", "Authorization" => "Bearer $key"]
     data = post_json("https://openrouter.ai/api/v1/chat/completions", body; headers)
     if haskey(data, "error")
@@ -113,7 +113,7 @@ mutable struct PromptConfig
     model::String
     api_key::Union{String,Nothing}
     temperature::Float64
-    max_tokens::Int
+    max_output_tokens::Int
     base_url::String
     path::String
 end
@@ -123,24 +123,24 @@ const CONFIG = Ref(PromptConfig(
     "Llama 3 8B Instruct", # model name
     nothing, # api key
     0.3, # temperature - i.e. remove randomness from the output
-    16384, # max output tokens — generous default to avoid truncation
+    16384, # generous default to avoid truncation
     "http://localhost:4891", # base url
     "/v1/chat/completions", # path
 ))
 
 """
-    set_backend!(backend::Symbol; model=nothing, api_key=nothing, temperature=nothing, max_tokens=nothing, base_url=nothing, path=nothing)
+    set_backend!(backend::Symbol; model=nothing, api_key=nothing, temperature=nothing, max_output_tokens=nothing, base_url=nothing, path=nothing)
 
 Set backend and optional parameters for all subsequent `prompt(...)` calls.
 - `backend`: `:local` (LM Studio, Ollama, gpt4all etc.) or `:openrouter`
 - `model`: model name (defaults per backend if not set)
 - `api_key`: API key (for OpenRouter; or set env OPENROUTER_API_KEY)
-- `temperature`, `max_tokens`: sampling parameters (default: 16384)
+- `temperature`, `max_output_tokens`: sampling parameters (default: 16384)
 - `base_url`, `path`: for `:local` only (e.g. "http://localhost:4891", "/v1/chat/completions")
 
 Omitted keyword arguments keep their current value (or backend default when switching backend).
 """
-function set_backend!(backend::Symbol; model = nothing, api_key = nothing, temperature = nothing, max_tokens = nothing, base_url = nothing, path = nothing)
+function set_backend!(backend::Symbol; model = nothing, api_key = nothing, temperature = nothing, max_output_tokens = nothing, base_url = nothing, path = nothing)
     haskey(BACKENDS, backend) || throw(ArgumentError("backend must be one of $(keys(BACKENDS)), got $backend"))
     c = CONFIG[]
     cfg = BACKENDS[backend]
@@ -149,7 +149,7 @@ function set_backend!(backend::Symbol; model = nothing, api_key = nothing, tempe
         model !== nothing ? model : (c.backend == backend ? c.model : cfg.default_model),
         api_key !== nothing ? api_key : c.api_key,
         temperature !== nothing ? Float64(temperature) : c.temperature,
-        max_tokens !== nothing ? Int(max_tokens) : c.max_tokens,
+        max_output_tokens !== nothing ? Int(max_output_tokens) : c.max_output_tokens,
         base_url !== nothing ? base_url : c.base_url,
         path !== nothing ? path : c.path,
     )
@@ -169,13 +169,13 @@ function prompt(input::AbstractString)
     @debug "using backend: $(c.backend)"
     @debug "using model: $(c.model)"
     @debug "using temperature: $(c.temperature)"
-    @debug "using max_tokens: $(c.max_tokens)"
+    @debug "using max_output_tokens: $(c.max_output_tokens)"
     
     cfg.fn(input;
         model = c.model,
         api_key = c.api_key,
         temperature = c.temperature,
-        max_tokens = c.max_tokens,
+        max_output_tokens = c.max_output_tokens,
         base_url = c.base_url,
         path = c.path,
     )
