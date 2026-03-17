@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE basic-transcription SYSTEM "https://www.exmaralda.org/files/basic-transcription.dtd">
+<basic-transcription>
+  <head>
+    <meta-information>
+      <project-name>Sample</project-name>
+    </meta-information>
+    <speaker-table>
+      <speaker id="SPK0" abbreviation="A" sex="m">
+        <name>Speaker Alpha</name>
+      </speaker>
+      <speaker id="SPK1" abbreviation="B" sex="f">
+        <name>Speaker Beta</name>
+      </speaker>
+    </speaker-table>
+  </head>
+  <basic-body>
+    <common-timeline>
+      <tli id="T0" time="0.0"/>
+      <tli id="T1" time="1.5"/>
+      <tli id="T2" time="3.0"/>
+      <tli id="T3" time="5.0"/>
+      <tli id="T4" time="7.0"/>
+    </common-timeline>
+    <tier id="TIE0" speaker="SPK0" category="v" type="t" display-name="A [v]">
+      <event start="T0" end="T1">Hallo, wie geht es dir?</event>
+      <event start="T2" end="T3">Das ist ein Test.</event>
+    </tier>
+    <tier id="TIE1" speaker="SPK1" category="v" type="t" display-name="B [v]">
+      <event start="T1" end="T2">Gut, danke!</event>
+      <event start="T3" end="T4">Alles klar.</event>
+    </tier>
+  </basic-body>
+</basic-transcription>
