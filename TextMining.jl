@@ -81,12 +81,12 @@ function _repair_truncated_json(text::AbstractString)
     idx === nothing && return nothing
     s = text[idx:end]
 
-    # Cut back to the last comma (end of the last complete array entry)
-    i = findlast(',', s)
+    # Cut back to the last "}," (end of last complete object); keep the "}"
+    i = findlast("},", s)
     i === nothing && return nothing
-    s = s[1:prevind(s, i)]
+    s = s[1:i]
 
-    s * "]}"
+    s * "]}"   # close array and outer object
 end
 
 """
@@ -96,7 +96,7 @@ Extract the first `{...}` JSON blob from `response_str` and parse it.
 If normal parsing fails (e.g. truncated output), attempts bracket repair.
 Returns the parsed `Dict` or `nothing` if no valid JSON block is found.
 """
-function _parse_json_from_response(response_str::String)
+function _parse_json_from_response(response_str::AbstractString)
     m = match(r"\{.*\}"s, response_str)
     if m !== nothing
         try
@@ -128,8 +128,8 @@ Extract named entities from `corpus` using an LLM. Returns a vector of entities
 `(id, name, type)` or `nothing` if parsing failed after retries.
 """
 function extract_entities(
-    corpus::String;
-    priming::String = "",
+    corpus::AbstractString;
+    priming::AbstractString = "",
     types::Vector{String} = ENTITY_TYPES,
     rules::Vector{String} = ENTITY_RULES,
 )
@@ -187,9 +187,9 @@ Extract relationships between `entities` from `corpus` using an LLM. Returns a v
 of relationships `(source, target, type, confidence)` or `nothing` if parsing failed.
 """
 function extract_relationships(
-    corpus::String,
+    corpus::AbstractString,
     entities::Vector;
-    priming::String = "",
+    priming::AbstractString = "",
     types::Vector{String} = RELATIONSHIP_TYPES,
     rules::Vector{String} = RELATIONSHIP_RULES,
     min_confidence::Float64 = 0.0,
