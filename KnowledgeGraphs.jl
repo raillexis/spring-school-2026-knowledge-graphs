@@ -34,10 +34,18 @@ validate_graph(data) = haskey(data, "entities") && haskey(data, "relationships")
 # -----------------------------------------------------------------------------
 
 const DEFAULT_TITLE = "Knowledge graph"
-const DEFAULT_SIZE = (800, 600)
-const DEFAULT_LAYOUT = Spring(; seed = 42)
-const NLABELS_DISTANCE = 10
+const DEFAULT_SIZE = (2000, 1400)
+const DEFAULT_LAYOUT = Align(SFDP(; C = 5.0, K = 4.0, iterations = 700, tol = 0.01, seed = 42))
+const NLABELS_DISTANCE = 6
 const ELABELS_DISTANCE = 15
+const DEFAULT_NODE_SIZE = 6
+const DEFAULT_NODE_COLOR = :steelblue3
+const DEFAULT_EDGE_WIDTH = 1.5
+const DEFAULT_EDGE_COLOR = RGBAf(0.15, 0.15, 0.15, 0.45)
+const DEFAULT_ARROW_SIZE = 12
+const DEFAULT_CURVE_DISTANCE = 0.08
+const DEFAULT_NODE_LABEL_SIZE = 10
+const DEFAULT_EDGE_LABEL_SIZE = 9
 
 # -----------------------------------------------------------------------------
 # Build graph (vertex props: name, type, id?; edge props: type, confidence, id?)
@@ -112,19 +120,52 @@ function _edge_labels(g)
     ]
 end
 
-function _make_figure(g; title = DEFAULT_TITLE, size = DEFAULT_SIZE, layout = DEFAULT_LAYOUT)
+function _make_figure(
+    g;
+    title = DEFAULT_TITLE,
+    size = DEFAULT_SIZE,
+    layout = DEFAULT_LAYOUT,
+    show_edge_labels = false,
+)
     nlabels = _vertex_labels(g)
-    elabels = _edge_labels(g)
     fig = Figure(; size)
     ax = Axis(fig[1, 1]; title)
-    graphplot!(ax, g;
-        nlabels,
-        nlabels_align = (:center, :center),
-        nlabels_distance = NLABELS_DISTANCE,
-        elabels,
-        elabels_distance = ELABELS_DISTANCE,
-        layout,
-    )
+    if show_edge_labels
+        graphplot!(ax, g;
+            nlabels,
+            nlabels_align = (:center, :bottom),
+            nlabels_distance = NLABELS_DISTANCE,
+            nlabels_fontsize = DEFAULT_NODE_LABEL_SIZE,
+            elabels = _edge_labels(g),
+            elabels_distance = ELABELS_DISTANCE,
+            elabels_fontsize = DEFAULT_EDGE_LABEL_SIZE,
+            node_size = DEFAULT_NODE_SIZE,
+            node_color = DEFAULT_NODE_COLOR,
+            edge_width = DEFAULT_EDGE_WIDTH,
+            edge_color = DEFAULT_EDGE_COLOR,
+            arrow_size = DEFAULT_ARROW_SIZE,
+            arrow_shift = :end,
+            curve_distance = DEFAULT_CURVE_DISTANCE,
+            curve_distance_usage = true,
+            layout,
+        )
+    else
+        graphplot!(ax, g;
+            nlabels,
+            nlabels_align = (:center, :bottom),
+            nlabels_distance = NLABELS_DISTANCE,
+            nlabels_fontsize = DEFAULT_NODE_LABEL_SIZE,
+            node_size = DEFAULT_NODE_SIZE,
+            node_color = DEFAULT_NODE_COLOR,
+            edge_width = DEFAULT_EDGE_WIDTH,
+            edge_color = DEFAULT_EDGE_COLOR,
+            arrow_size = DEFAULT_ARROW_SIZE,
+            arrow_shift = :end,
+            curve_distance = DEFAULT_CURVE_DISTANCE,
+            curve_distance_usage = true,
+            layout,
+        )
+    end
     hidespines!(ax)
     hidedecorations!(ax)
     ax.aspect = DataAspect()
@@ -136,24 +177,27 @@ end
 # -----------------------------------------------------------------------------
 
 """
-    plot_knowledge_graph(g; title = "Knowledge graph", size = (800, 600), layout = Spring(; seed = 42))
+    plot_knowledge_graph(g; title = "Knowledge graph", size = DEFAULT_SIZE, layout = DEFAULT_LAYOUT, show_edge_labels = false)
 
-Plot the knowledge graph (MetaDiGraph) with Makie, showing vertex and edge meta properties.
+Plot the knowledge graph (MetaDiGraph) with Makie. Node labels are shown by default;
+edge labels can be enabled with `show_edge_labels = true`.
 Returns the Figure. Call `display(fig)` from the caller if needed.
 """
-function plot_knowledge_graph(g; title = DEFAULT_TITLE, size = DEFAULT_SIZE, layout = DEFAULT_LAYOUT)
-    fig = _make_figure(g; title, size, layout)
+function plot_knowledge_graph(g; title = DEFAULT_TITLE, size = DEFAULT_SIZE, layout = DEFAULT_LAYOUT, show_edge_labels = false)
+    fig = _make_figure(g; title, size, layout, show_edge_labels)
     display(fig)
+    return fig
 end
 
 """
-    save_knowledge_graph_png(g, path; title = "Knowledge graph", size = (800, 600), layout = Spring(; seed = 42))
+    save_knowledge_graph_png(g, path; title = "Knowledge graph", size = DEFAULT_SIZE, layout = DEFAULT_LAYOUT, show_edge_labels = false)
 
 Render the knowledge graph and save it as a PNG file. Returns the path.
 """
-function save_knowledge_graph_png(g, path; title = DEFAULT_TITLE, size = DEFAULT_SIZE, layout = DEFAULT_LAYOUT)
-    fig = _make_figure(g; title, size, layout)
+function save_knowledge_graph_png(g, path; title = DEFAULT_TITLE, size = DEFAULT_SIZE, layout = DEFAULT_LAYOUT, show_edge_labels = false)
+    fig = _make_figure(g; title, size, layout, show_edge_labels)
     save(path, fig)
+    return path
 end
 
 """
